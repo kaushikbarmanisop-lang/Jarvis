@@ -2,123 +2,136 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>JARVIS UI</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JARVIS AI</title>
+
   <style>
-    body {
-      margin: 0;
-      height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      background: radial-gradient(circle at center, #0f2027, #000000);
-      font-family: 'Segoe UI', sans-serif;
-      color: #00f7ff;
-      overflow: hidden;
-    }
-
-    .container {
-      text-align: center;
-    }
-
-    .circle {
-      width: 200px;
-      height: 200px;
-      border-radius: 50%;
-      border: 4px solid #00f7ff;
-      box-shadow: 0 0 20px #00f7ff, 0 0 60px #00f7ff inset;
-      margin: 0 auto 30px;
-      animation: pulse 2s infinite;
-    }
-
-    @keyframes pulse {
-      0% { transform: scale(1); box-shadow: 0 0 20px #00f7ff; }
-      50% { transform: scale(1.1); box-shadow: 0 0 40px #00f7ff; }
-      100% { transform: scale(1); box-shadow: 0 0 20px #00f7ff; }
-    }
-
-    h1 {
-      font-size: 2rem;
-      letter-spacing: 2px;
-      margin-bottom: 10px;
-    }
-
-    .typing {
-      font-size: 1.2rem;
-      border-right: 2px solid #00f7ff;
-      display: inline-block;
-      white-space: nowrap;
-      overflow: hidden;
-      animation: blink 0.8s infinite;
-    }
-
-    @keyframes blink {
-      50% { border-color: transparent; }
-    }
-
-    .download-btn {
-      margin-top: 25px;
-      padding: 12px 28px;
-      font-size: 16px;
-      background: #00f7ff;
-      border: none;
-      border-radius: 30px;
-      cursor: pointer;
-      color: black;
-      box-shadow: 0 0 15px #00f7ff;
-      transition: 0.3s;
-    }
-
-    .download-btn:hover {
-      background: #00c3cc;
-      box-shadow: 0 0 25px #00f7ff;
-      transform: scale(1.05);
-    }
-
-    .footer {
-      position: absolute;
-      bottom: 20px;
-      width: 100%;
-      text-align: center;
-      font-size: 0.9rem;
-      opacity: 0.7;
-    }
+    :root { --bg:#0b0f14; --card:rgba(255,255,255,0.06); --border:rgba(255,255,255,0.1); --accent:#00f7ff; --text:#e8f1f2; --muted:#9aa6ad; }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:-apple-system,Segoe UI,sans-serif;background:radial-gradient(circle at top,#0f1a22,#05080c);color:var(--text)}
+    header{position:sticky;top:0;backdrop-filter:blur(12px);background:rgba(0,0,0,.4);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;padding:14px 32px}
+    .hero{text-align:center;padding:100px 20px}
+    .btn{padding:12px 26px;border-radius:999px;border:1px solid var(--border);background:linear-gradient(145deg,#00f7ff,#00bcd4);color:black;cursor:pointer}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:20px;padding:40px}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px}
+    .footer{text-align:center;padding:30px;color:var(--muted)}
+    .user-box{position:fixed;top:15px;right:20px;text-align:right}
+    .user-box img{width:32px;height:32px;border-radius:50%;vertical-align:middle}
+    .history{max-width:800px;margin:30px auto;padding:20px;background:var(--card);border-radius:12px}
   </style>
 </head>
 <body>
 
-<div class="container">
-  <div class="circle"></div>
-  <h1>JARVIS SYSTEM</h1>
-  <div class="typing" id="text"></div>
-  <br>
-  <button onclick="downloadApp()" class="download-btn">Download JARVIS</button>
+<header><h3>JARVIS</h3></header>
+
+<section class="hero">
+  <h1>AI That Feels Effortless</h1>
+  <button class="btn" onclick="downloadApp()">Download</button>
+  <p id="login-warning" style="color:#f66;display:none">Login required to download</p>
+</section>
+
+<section class="grid">
+  <div class="card">🎙 Voice Control</div>
+  <div class="card">🧠 Smart AI</div>
+  <div class="card">⚡ Automation</div>
+</section>
+
+<div class="history">
+  <h3>Command History</h3>
+  <ul id="history-list"></ul>
 </div>
 
 <div class="footer">Made By Kaushik & ChatGPT</div>
 
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
 <script>
-  const message = "Initializing AI Interface...";
-  let index = 0;
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyChrLhEzf7IUvNWq63a6tdYoOpamxTBoaM",
+  authDomain: "jarvis-ai-6d3f9.firebaseapp.com",
+  projectId: "jarvis-ai-6d3f9",
+  storageBucket: "jarvis-ai-6d3f9.firebasestorage.app",
+  messagingSenderId: "923953729743",
+  appId: "1:923953729743:web:8fb84e50b147c936b527ba",
+  measurementId: "G-V7EJ5H910S"
+};
 
-  function typeEffect() {
-    if (index < message.length) {
-      document.getElementById("text").innerHTML += message.charAt(index);
-      index++;
-      setTimeout(typeEffect, 80);
-    }
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+let currentUser = null;
+
+// UI
+const userBox = document.createElement('div');
+userBox.className = 'user-box';
+document.body.appendChild(userBox);
+
+function renderUser(user){
+  if(user){
+    userBox.innerHTML = `
+      <img src="${user.photoURL}"> ${user.displayName}<br>
+      <button onclick="signOutUser()" class="btn">Sign out</button>
+    `;
+  }else{
+    userBox.innerHTML = `<button onclick="signIn()" class="btn">Sign in with Google</button>`;
   }
+}
 
-  function downloadApp() {
-    const link = document.createElement('a');
-    // 👉 Replace this with your real EXE download link
-    link.href = 'https://github.com/kaushikbarmanisop-lang/Jarvis/releases/tag/Jarvis';
-    link.download = 'jarvis.exe';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+// Auth
+function signIn(){
+  const provider = new firebase.auth.GoogleAuthProvider();
+  auth.signInWithPopup(provider);
+}
+
+function signOutUser(){ auth.signOut(); }
+
+// Listen auth
+auth.onAuthStateChanged(user=>{
+  currentUser = user;
+  renderUser(user);
+  if(user) loadHistory();
+});
+
+// Protect download
+function downloadApp(){
+  if(!currentUser){
+    document.getElementById('login-warning').style.display='block';
+    return;
   }
+  saveCommand("download");
+  const link=document.createElement('a');
+  link.href="https://github.com/kaushikbarmanisop-lang/Jarvis/releases/download/v1.0/JarvisSetup.exe";
+  document.body.appendChild(link);link.click();document.body.removeChild(link);
+}
 
-  typeEffect();
+// Save data
+function saveCommand(cmd){
+  if(!currentUser) return;
+  db.collection("users").doc(currentUser.uid).collection("history").add({
+    command: cmd,
+    time: new Date()
+  });
+}
+
+// Load history
+function loadHistory(){
+  const list=document.getElementById('history-list');
+  list.innerHTML="";
+  db.collection("users").doc(currentUser.uid).collection("history")
+    .orderBy("time","desc").limit(10)
+    .get().then(snapshot=>{
+      snapshot.forEach(doc=>{
+        const li=document.createElement('li');
+        li.textContent=doc.data().command;
+        list.appendChild(li);
+      });
+    });
+}
 </script>
 
 </body>
